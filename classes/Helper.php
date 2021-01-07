@@ -11,6 +11,7 @@ class Helper {
     private $template;
 
     private $cache;
+    private $cachedItems;
     private $parentPage;
 
     // Expects $config["fetch"=>function(){}, "parentUid"=>"some-parent-id", "template"=>"some-template"]
@@ -33,20 +34,24 @@ class Helper {
     // Returns an array of the fetched items
     private function fetch()
     {
-        $cache = $this->cache;
-        // Cache uses the parent as ID
-        $cacheData = $cache->get($this->parent);
+        if (is_null($this->cachedItems)) {
+            $cache = $this->cache;
+            // Cache uses the parent as ID
+            $cacheData = $cache->get($this->parent);
 
-        // There's nothing in the cache, so let's fetch it
-        if ($cacheData === null) {
+            // There's nothing in the cache, so let's fetch it
+            if ($cacheData === null) {
 
-            $items = ($this->fetch)();
+                $items = ($this->fetch)();
 
-            $cache->set($this->parent, json_encode($items), option("bvdputte.kirby-vr.cache.timeout"));
-            return $items;
+                $cache->set($this->parent, json_encode($items), option("bvdputte.kirby-vr.cache.timeout"));
+                return $items;
+            }
+
+            $this->cachedItems = json_decode($cacheData, true);
         }
 
-        return json_decode($cacheData, true);
+        return $this->cachedItems;
     }
 
     // Deletes the cached articles
