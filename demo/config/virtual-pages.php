@@ -30,8 +30,8 @@ return [
 
                 try {
                     $apiData = file_get_contents($api);
-                } catch (Exception $e) {
-                    error_log("Error fetching data from " . $api . ": " .  $e->getMessage() );
+                } catch (\Throwable $e) {
+                    throw new \Exception("Error fetching data from " . $api . ": " .  $e->getMessage() );
                 }
 
                 $vrPagesPerLang = [];

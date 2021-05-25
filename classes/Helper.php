@@ -6,49 +6,78 @@ use Kirby\Cms\Page;
 use cache;
 
 class Helper {
-    private $fetch;
-    private $parent;
+    private $fetch_func;
     private $template;
-
-    private $cache;
-    private $cachedItems;
     private $parentPage;
 
-    // Expects $config["fetch"=>function(){}, "parentUid"=>"some-parent-id", "template"=>"some-template"]
+    private $cache;
+    private $cacheID;
+    private $cachedItems;
+
+    // Expects $config["fetch_func"=>function(){}, "parentUid"=>"some-parent-id", "template"=>"some-template"]
     public function __construct(Array $config)
     {
-        $this->cache = kirby()->cache("bvdputte.kirby-vr.vrData");
-
-        $this->parent = $config["parentUid"];
-        $this->fetch = $config["fetch"];
+        $this->fetch_func = $config["fetch"];
         $this->template = $config["template"];
 
-        if ($parentPage = site()->children()->findById($this->parent)) {
+        if ($parentPage = site()->children()->findById($config["parentUid"])) {
             $this->parentPage = $parentPage;
         } else {
-            throw new \Exception("Kirby VR: parent `" . $this->parent . "` is not found in the site.");
+            throw new \Exception("Kirby VR: parent `" . $config["parentUid"] . "` is not found in the site.");
         }
+
+        $this->cache = kirby()->cache("bvdputte.kirby-vr.vrData");
+        $this->cacheID = $config["parentUid"]; // Cache uses the parentUID as ID
     }
 
-    // Fetch, migrate and cache
+    // Fetch and cache
     // Returns an array of the fetched items
     private function fetch()
     {
+        // Check if we have "memory cache"
         if (is_null($this->cachedItems)) {
             $cache = $this->cache;
-            // Cache uses the parent as ID
-            $cacheData = $cache->get($this->parent);
+            $vrCache = $cache->retrieve($this->cacheID);
 
-            // There's nothing in the cache, so let's fetch it
-            if ($cacheData === null) {
+            // Nothing in cache; Fetch the items, cache it & return them
+            if (is_null($vrCache)) {
+                try {
+                    $items = ($this->fetch_func)();
+                    $cache->set($this->cacheID, json_encode($items), option("bvdputte.kirby-vr.cache.timeout"));
+                    // var_dump("Empty cache created from source");
 
-                $items = ($this->fetch)();
-
-                $cache->set($this->parent, json_encode($items), option("bvdputte.kirby-vr.cache.timeout"));
-                return $items;
+                    return $items;
+                } catch (\Throwable $e) {
+                    // Something is wrong at the endpoint and we have nothing in cache => exit with Error
+                    throw new \Exception($e->getMessage());
+                }
             }
 
-            $this->cachedItems = json_decode($cacheData, true);
+            // Cache is expired
+            if ($cache->expired($this->cacheID)) {
+                // Re-fetch && re-cache
+                try {
+                    $items = ($this->fetch_func)();
+                    $cache->set($this->cacheID, json_encode($items), option("bvdputte.kirby-vr.cache.timeout"));
+                    // var_dump("Cache was expired, re-fetched and cached succesfully");
+
+                    return $items;
+                } catch (\Throwable $e) {
+                    // Something went wrong, but we have an expired version => re-cache invalid cache
+                    $items = json_decode($cache->retrieve($this->cacheID)->value(), true);
+                    $cache->set($this->cacheID, json_encode($items), option("bvdputte.kirby-vr.cache.timeout-retry-fail"));
+                    // var_dump("Cache was expired, re-fetched failed; but re-cached from expired cache succesfully");
+
+                    if (site()->hasMethod('logger')) {
+                        site()->logger(option("bvdputte.kirby-vr.errorlogname"))->log($e->getMessage(), 'error');
+                    }
+
+                    return $items;
+                }
+            }
+
+            // Items are in valid cache
+            $this->cachedItems = json_decode($cache->get($this->cacheID), true);
         }
 
         return $this->cachedItems;
@@ -58,7 +87,7 @@ class Helper {
     private function flushCache()
     {
         $cache = $this->cache;
-        $cache->remove($this->parent);
+        $cache->remove($this->cacheID);
     }
 
     // Updates the cached articles from the API
