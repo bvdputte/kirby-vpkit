@@ -12,7 +12,7 @@ By default virtual pages in a multilingual Kirby environment require some additi
 ## Setup
 
 1. Add a configuration array to your `config.php` that contains:
-   1. `fetch`: a closure (function) that returns the above array. This will be used to generate the virtual pages.
+   1. `fetch`: a closure (function) that returns the array below. This needs to have a `fetch`, `parentUid` and `template`-key. This will be used to generate the virtual pages.
    2. `parentUid`: The ID of the parent page where the virtual pages will be put
    3. `template`: The template you want for the virtual pages
 2. Create a [model](https://getkirby.com/docs/guide/templates/page-models) for `template` to `site/models` and reuse the `children()` method to return the virtual pages with this plugin's helper
