@@ -1,8 +1,8 @@
 <?php
 
-// Configs for kirby-vr
+// Configs for kirby-vpkit
 // Put it in `/site/content/config` and include it like this in `config.php`:
-// 'bvdputte.kirby-vr.config' => require_once __DIR__ . '/virtual-pages.php',
+// 'bvdputte.vpkit.config' => require_once __DIR__ . '/virtual-pages.php',
 
 return [
     "virtual-pages-demo" => [

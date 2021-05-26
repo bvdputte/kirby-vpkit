@@ -1,11 +1,11 @@
 <?php
 
-namespace bvdputte\kirbyVr;
+namespace bvdputte\kirbyVPKit;
 use Kirby\Cms\Pages;
 use Kirby\Cms\Page;
 use cache;
 
-class Helper {
+class VPKit {
     private $template;
     private $parentPage;
     private $fetch_func;

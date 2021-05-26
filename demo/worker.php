@@ -1,5 +1,7 @@
 <?php
 
+use bvdputte\kirbyVPKit\VPKit;
+
 // Bootstrap Kirby (from with the plugin's folder)
 $siteRoot = dirname(__FILE__) . "/../../../../";
 require $siteRoot.'/kirby/bootstrap.php';
@@ -14,8 +16,8 @@ $kirby = new Kirby([
 ]);
 
 // Replenish the jobs cache
-$hrTechApi = new bvdputte\kirbyVr\Helper(option("bvdputte.kirby-vr.config")["virtual-pages-demo"]);
-$hrTechApi->replenishCache();
+$myDemoVPKit = new VPKit(option("bvdputte.kirby-vpkit.config")["virtual-pages-demo"]);
+$myDemoVPKit->replenishCache();
 
 // Also Flush the pages cache
 kirby()->cache('pages')->flush();
