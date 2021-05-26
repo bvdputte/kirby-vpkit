@@ -6,101 +6,35 @@ use Kirby\Cms\Page;
 use cache;
 
 class Helper {
-    private $fetch_func;
     private $template;
     private $parentPage;
+    private $fetch_func;
 
-    private $cache;
+    private $rawItems;
+    private $cache=false;
     private $cacheID;
-    private $cachedItems;
 
     // Expects $config["fetch_func"=>function(){}, "parentUid"=>"some-parent-id", "template"=>"some-template"]
     public function __construct(Array $config)
     {
-        $this->fetch_func = $config["fetch"];
         $this->template = $config["template"];
 
         if ($parentPage = site()->children()->findById($config["parentUid"])) {
             $this->parentPage = $parentPage;
         } else {
-            throw new \Exception("Kirby VR: parent `" . $config["parentUid"] . "` is not found in the site.");
+            $errorMessage = "Kirby VR: parent `" . $config["parentUid"] . "` is not found in the site.";
+            $this->log($errorMessage);
+            throw new \Exception($errorMessage);
         }
 
-        $this->cache = kirby()->cache("bvdputte.kirby-vr.vrData");
-        $this->cacheID = $config["parentUid"]; // Cache uses the parentUID as ID
-    }
-
-    // Fetch and cache
-    // Returns an array of the fetched items
-    private function fetch()
-    {
-        // Check if we have "memory cache"
-        if (is_null($this->cachedItems)) {
-            $cache = $this->cache;
-            $vrCache = $cache->retrieve($this->cacheID);
-
-            // Nothing in cache; Fetch the items, cache it & return them
-            if (is_null($vrCache)) {
-                try {
-                    $items = ($this->fetch_func)();
-                    $cache->set($this->cacheID, json_encode($items), option("bvdputte.kirby-vr.cache.timeout"));
-                    // var_dump("Empty cache created from source");
-
-                    return $items;
-                } catch (\Throwable $e) {
-                    // Something is wrong at the endpoint and we have nothing in cache => exit with Error
-                    throw new \Exception($e->getMessage());
-                }
-            }
-
-            // Cache is expired
-            if ($cache->expired($this->cacheID)) {
-                // Re-fetch && re-cache
-                try {
-                    $items = ($this->fetch_func)();
-                    $cache->set($this->cacheID, json_encode($items), option("bvdputte.kirby-vr.cache.timeout"));
-                    // var_dump("Cache was expired, re-fetched and cached succesfully");
-
-                    return $items;
-                } catch (\Throwable $e) {
-                    // Something went wrong, but we have an expired version => re-cache invalid cache
-                    $items = json_decode($cache->retrieve($this->cacheID)->value(), true);
-                    $cache->set($this->cacheID, json_encode($items), option("bvdputte.kirby-vr.cache.timeout-retry-fail"));
-                    // var_dump("Cache was expired, re-fetched failed; but re-cached from expired cache succesfully");
-
-                    if (site()->hasMethod('logger')) {
-                        site()->logger(option("bvdputte.kirby-vr.errorlogname"))->log($e->getMessage(), 'error');
-                    }
-
-                    return $items;
-                }
-            }
-
-            // Items are in valid cache
-            $this->cachedItems = json_decode($cache->get($this->cacheID), true);
+        if (option("bvdputte.kirby-vr.cache")) {
+            $this->cache = kirby()->cache("bvdputte.kirby-vr");
+            $this->cacheID = $config["parentUid"]; // Cache uses the parentUID as ID
         }
 
-        return $this->cachedItems;
-    }
-
-    // Deletes the cached articles
-    private function flushCache()
-    {
-        $cache = $this->cache;
-        $cache->remove($this->cacheID);
-    }
-
-    // Updates the cached articles from the API
-    public function replenishCache()
-    {
-        $this->flushCache();
-        $data = $this->fetch();
-
-        if ($data != null) {
-            return true;
-        } else {
-            return false;
-        }
+        // Fetch raw items array via the supplied closure
+        $this->fetch_func = $config["fetch"];
+        $this->rawItems = $this->fetchRawItems();
     }
 
     // Return an Pages-object of items with specified keys per item (per language)
@@ -114,14 +48,65 @@ class Helper {
         return Pages::factory($vrPages, $this->parentPage);
     }
 
+    // Updates the cached articles from the API
+    public function replenishCache()
+    {
+        $this->flushCache();
+        $this->rawItems = $this->fetchRawItems();
+    }
+
+    // Fetch and cache
+    // Returns an array of the fetched items
+    private function fetchRawItems()
+    {
+        if ($this->cache) {
+            $cache = $this->cache;
+
+            // Nothing in cache; Fetch the items, cache it & return them
+            if (is_null($cache->retrieve($this->cacheID))) {
+                $items = ($this->fetch_func)();
+                $cache->set($this->cacheID, json_encode($items), option("bvdputte.kirby-vr.cache.timeout"));
+
+                return $items;
+            }
+
+            // Cache is expired
+            if ($cache->expired($this->cacheID)) {
+                try {
+                    // Re-fetch && re-cache
+                    $items = ($this->fetch_func)();
+                    $cache->set($this->cacheID, json_encode($items), option("bvdputte.kirby-vr.cache.timeout"));
+
+                    return $items;
+                } catch (\Throwable $e) {
+                    if (option("bvdputte.kirby-vr.cache.recache-on-fail")) {
+                        // Something went wrong, but we have an expired version => re-cache invalid cache
+                        $items = json_decode($cache->retrieve($this->cacheID)->value(), true);
+                        $cache->set($this->cacheID, json_encode($items), option("bvdputte.kirby-vr.cache.recache-on-fail.timeout"));
+                        $this->log($e->getMessage());
+
+                        return $items;
+                    } else {
+                        $this->log($e->getMessage());
+                        throw new \Exception($e->getMessage());
+                    }
+                }
+            }
+
+            // Items already are in a valid cache
+            return json_decode($cache->get($this->cacheID), true);
+        }
+
+        return ($this->fetch_func)();
+    }
+
     // Return an array of items with specified keys per item (per language)
     private function getItemsInCurrentLang()
     {
         $currentLang = kirby()->language()->code();
-        $allItems = $this->fetch();
 
-        if(isset($allItems[$currentLang])) {
-            return $allItems[$currentLang];
+        if(isset($this->rawItems[$currentLang])) {
+            return $this->rawItems[$currentLang];
         } else {
             return [];
         }
@@ -145,7 +130,7 @@ class Helper {
     private function getTranslations($id)
     {
         $translations = [];
-        foreach($this->fetch() as $lang => $localizedItems) {
+        foreach($this->rawItems as $lang => $localizedItems) {
             foreach($localizedItems as $item) {
                 if( $item["id"] == $id) {
                     $config["code"] = $lang;
@@ -156,5 +141,19 @@ class Helper {
         }
 
         return $translations;
+    }
+
+    // Deletes the cached articles
+    private function flushCache()
+    {
+        $cache = $this->cache;
+        $cache->remove($this->cacheID);
+    }
+
+    private function log($message, $loglevel="error")
+    {
+        if (site()->hasMethod('logger')) {
+            site()->logger(option("bvdputte.kirby-vr.logname"))->log($message, $loglevel);
+        }
     }
 }
