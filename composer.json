@@ -1,0 +1,24 @@
+{
+    "name": "bvdputte/kirby-vpkit",
+    "description": "Virtual pages helper kit for multilingual Kirby 3",
+    "license": "MIT",
+    "type": "kirby-plugin",
+    "authors": [
+      {
+          "name": "Bart Vandeputte",
+          "email": "mail@bartvandeputte.be"
+      }
+    ],
+    "require": {
+        "getkirby/composer-installer": "^1.1"
+    },
+    "autoload": {
+      "psr-4": {
+          "bvdputte\\kirbyVPKit\\": "classes/"
+      }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    }
+}

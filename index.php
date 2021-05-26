@@ -2,6 +2,8 @@
 
 include __DIR__ . DS . 'classes' . DS . 'VPKit.php';
 
+@include_once __DIR__ . '/vendor/autoload.php';
+
 Kirby::plugin('bvdputte/kirby-vpkit', [
     'options' => [
         'cache' => true, // Add cache to plugin
