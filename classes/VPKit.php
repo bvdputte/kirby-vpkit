@@ -27,8 +27,8 @@ class VPKit {
             throw new \Exception($errorMessage);
         }
 
-        if (option("bvdputte.kirby-vr.cache")) {
-            $this->cache = kirby()->cache("bvdputte.kirby-vr");
+        if (option("bvdputte.kirby-vpkit.cache")) {
+            $this->cache = kirby()->cache("bvdputte.kirby-vpkit");
             $this->cacheID = $config["parentUid"]; // Cache uses the parentUID as ID
         }
 
@@ -65,7 +65,7 @@ class VPKit {
             // Nothing in cache; Fetch the items, cache it & return them
             if (is_null($cache->retrieve($this->cacheID))) {
                 $items = ($this->fetch_func)();
-                $cache->set($this->cacheID, json_encode($items), option("bvdputte.kirby-vr.cache.timeout"));
+                $cache->set($this->cacheID, json_encode($items), option("bvdputte.kirby-vpkit.cache.timeout"));
 
                 return $items;
             }
@@ -75,14 +75,14 @@ class VPKit {
                 try {
                     // Re-fetch && re-cache
                     $items = ($this->fetch_func)();
-                    $cache->set($this->cacheID, json_encode($items), option("bvdputte.kirby-vr.cache.timeout"));
+                    $cache->set($this->cacheID, json_encode($items), option("bvdputte.kirby-vpkit.cache.timeout"));
 
                     return $items;
                 } catch (\Throwable $e) {
-                    if (option("bvdputte.kirby-vr.cache.recache-on-fail")) {
+                    if (option("bvdputte.kirby-vpkit.cache.recache-on-fail")) {
                         // Something went wrong, but we have an expired version => re-cache invalid cache
                         $items = json_decode($cache->retrieve($this->cacheID)->value(), true);
-                        $cache->set($this->cacheID, json_encode($items), option("bvdputte.kirby-vr.cache.recache-on-fail.timeout"));
+                        $cache->set($this->cacheID, json_encode($items), option("bvdputte.kirby-vpkit.cache.recache-on-fail.timeout"));
                         $this->log($e->getMessage());
 
                         return $items;
@@ -153,7 +153,7 @@ class VPKit {
     private function log($message, $loglevel="error")
     {
         if (site()->hasMethod('logger')) {
-            site()->logger(option("bvdputte.kirby-vr.logname"))->log($message, $loglevel);
+            site()->logger(option("bvdputte.kirby-vpkit.logname"))->log($message, $loglevel);
         }
     }
 }
