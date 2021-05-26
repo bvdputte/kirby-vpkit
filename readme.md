@@ -9,7 +9,7 @@ By default virtual pages in a multilingual Kirby environment require some additi
 - unzip [master.zip](https://github.com/bvdputte/kirby-vpkit/archive/master.zip) as folder `site/plugins/kirby-vpkit` or
 - `git submodule add https://github.com/bvdputte/kirby-vpkit.git site/plugins/kirby-vpkit`
 
-## How does it work?
+## Setup
 
 1. Add a configuration array to your `config.php` that contains:
    1. `fetch`: a closure (function) that returns the above array. This will be used to generate the virtual pages.
@@ -19,9 +19,7 @@ By default virtual pages in a multilingual Kirby environment require some additi
 3. Create a template that matches the given `template`-name to `site/templates`
 4. Done. Kirby should now use your added virtual pages as regular pages.
 
-This plugin expects a configuration that returns data in the following form to convert into "virtual Kirby pages":
-
-### Feed data array example
+This plugin expects a configuration that returns data in the following form to convert into "virtual Kirby pages", e.g.:
 
 ```php
 $virtualPages = [
@@ -48,9 +46,11 @@ $virtualPages = [
 ];
 ```
 
-_Check the included `demo` folder in this plugin for demo files._
+_Check the included `demo` folder in this repo for some examples._
 
 ## Caching
+
+### Default
 
 By default, each fetch is cached. This is so to avoid latency occuring when fetching data from the endpoint.\
 If you don't want this, you can opt out via `'bvdputte.kirby-vpkit.cache' => false` in `config.php`.
@@ -58,12 +58,16 @@ If you don't want this, you can opt out via `'bvdputte.kirby-vpkit.cache' => fal
 Each fetch will be cached by default for 1 minute.\
 You can change this with `'bvdputte.kirby-vpkit.cache.timeout' => 60` in `config.php` (The value is in minutes).
 
+### Re-cache when backend is down
+
 When cache is enabled, and your backend is down, this plugin will also continue to serve the already cached data instead of erroring. You can opt out this behaviour via `'bvdputte.kirby-vpkit.recache-on-fail' => false` in `config.php`.\
 The timeout for this cache is also 1 minute by default but can set via option: `'bvdputte.kirby-vpkit.recache-on-fail.timeout' => 30` in `config.php` (The value is also in minutes).
 
 In this case, and if you have the [kirby-log plugin](https://github.com/bvdputte/kirby-log) installed, failed attempts will be logged.
 
-If you want to combine this with page cache you'll need a strategy to invalidate the reinstantiate cache; a common strategy here is to use a worker via a cronjob. There's also a demo worker included in this repo. Or you could exclude your virtual pages from your page cache.111
+### Combine with pages cache
+
+If you want to combine this with pages cache you'll need a strategy to invalidate the reinstantiate cache; a common strategy here is to use a worker via a cronjob. There's also a demo worker included in this repo. Or you could exclude your virtual pages from your page cache.
 
 ## Caveats
 
