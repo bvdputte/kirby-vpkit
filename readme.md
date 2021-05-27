@@ -8,6 +8,7 @@ By default virtual pages in a multilingual Kirby environment require some additi
 
 - unzip [master.zip](https://github.com/bvdputte/kirby-vpkit/archive/master.zip) as folder `site/plugins/kirby-vpkit` or
 - `git submodule add https://github.com/bvdputte/kirby-vpkit.git site/plugins/kirby-vpkit`
+- `composer require bvdputte/kirby-vpkit`
 
 ## Setup
 
