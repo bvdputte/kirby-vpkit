@@ -14,26 +14,26 @@ class VPKit {
     private $cache=false;
     private $cacheID;
 
-    // Expects $config["fetch_func"=>function(){}, "parentUid"=>"some-parent-id", "template"=>"some-template"]
+    // Expects $config['fetch_func"=>function(){}, "parentUid"=>"some-parent-id", "template"=>"some-template']
     public function __construct(Array $config)
     {
-        $this->template = $config["template"];
+        $this->template = $config['template'];
 
-        if ($parentPage = site()->children()->findById($config["parentUid"])) {
+        if ($parentPage = site()->children()->findById($config['parentUid'])) {
             $this->parentPage = $parentPage;
         } else {
-            $errorMessage = "Kirby VR: parent `" . $config["parentUid"] . "` is not found in the site.";
+            $errorMessage = "Kirby VR: parent `" . $config['parentUid'] . "` is not found in the site.";
             $this->log($errorMessage);
             throw new \Exception($errorMessage);
         }
 
         if (option("bvdputte.kirby-vpkit.cache")) {
             $this->cache = kirby()->cache("bvdputte.kirby-vpkit");
-            $this->cacheID = $config["parentUid"]; // Cache uses the parentUID as ID
+            $this->cacheID = $config['parentUid']; // Cache uses the parentUID as ID
         }
 
         // Fetch raw items array via the supplied closure
-        $this->fetch_func = $config["fetch"];
+        $this->fetch_func = $config['fetch'];
         $this->rawItems = $this->fetchRawItems();
     }
 
@@ -116,12 +116,12 @@ class VPKit {
     private function getVirtualPageProps($vrPageProps)
     {
         return [
-            'slug'     => $vrPageProps["slug"],
+            'slug'     => $vrPageProps['slug'],
             'num'      => 0,
             'template' => $this->template,
             'model'    => $this->template,
             'parent'   => $this->parentPage,
-            'translations' => $this->getTranslations($vrPageProps["id"]),
+            'translations' => $this->getTranslations($vrPageProps['id']),
             'content' => $vrPageProps['content']
         ];
     }
@@ -132,9 +132,10 @@ class VPKit {
         $translations = [];
         foreach($this->rawItems as $lang => $localizedItems) {
             foreach($localizedItems as $item) {
-                if( $item["id"] == $id) {
-                    $config["code"] = $lang;
-                    $config["slug"] = $item['slug'];
+                if( $item['id'] == $id) {
+                    $config['code'] = $lang;
+                    $config['slug'] = $item['slug'];
+                    $config['content'] = $item['content'];
                     $translations[$lang] = $config;
                 }
             }
