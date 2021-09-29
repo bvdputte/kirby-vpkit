@@ -155,6 +155,10 @@ class VPKit {
     {
         if (site()->hasMethod('logger')) {
             site()->logger(option("bvdputte.kirby-vpkit.logname"))->log($message, $loglevel);
+        } else {
+            if ($loglevel == "error") {
+                error_log($message);
+            }
         }
     }
 }
