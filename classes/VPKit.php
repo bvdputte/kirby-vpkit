@@ -19,7 +19,7 @@ class VPKit {
     {
         $this->template = $config['template'];
 
-        if ($parentPage = site()->children()->findById($config['parentUid'])) {
+        if ($parentPage = site()->children()->find($config['parentUid'])) {
             $this->parentPage = $parentPage;
         } else {
             $errorMessage = "Kirby VR: parent `" . $config['parentUid'] . "` is not found in the site.";
