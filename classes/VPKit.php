@@ -34,7 +34,6 @@ class VPKit {
 
         // Fetch raw items array via the supplied closure
         $this->fetch_func = $config['fetch'];
-        $this->rawItems = $this->fetchRawItems();
     }
 
     // Return an Pages-object of items with specified keys per item (per language)
@@ -52,13 +51,19 @@ class VPKit {
     public function replenishCache()
     {
         $this->flushCache();
-        $this->rawItems = $this->fetchRawItems();
+        $this->fetchRawItems();
     }
 
     // Fetch and cache
     // Returns an array of the fetched items
     private function fetchRawItems()
     {
+        // This is a potential slow function
+        // So, use a local variable for quicker successive traversals
+        if (isset($this->rawItems)) {
+            return $this->rawItems;
+        }
+
         if ($this->cache) {
             $cache = $this->cache;
 
@@ -67,6 +72,7 @@ class VPKit {
                 $items = ($this->fetch_func)();
                 $cache->set($this->cacheID, json_encode($items), option("bvdputte.kirby-vpkit.cache.timeout"));
 
+                $this->rawItems = $items;
                 return $items;
             }
 
@@ -77,6 +83,7 @@ class VPKit {
                     $items = ($this->fetch_func)();
                     $cache->set($this->cacheID, json_encode($items), option("bvdputte.kirby-vpkit.cache.timeout"));
 
+                    $this->rawItems = $items;
                     return $items;
                 } catch (\Throwable $e) {
                     if (option("bvdputte.kirby-vpkit.cache.recache-on-fail")) {
@@ -85,6 +92,7 @@ class VPKit {
                         $cache->set($this->cacheID, json_encode($items), option("bvdputte.kirby-vpkit.cache.recache-on-fail.timeout"));
                         $this->log($e->getMessage());
 
+                        $this->rawItems = $items;
                         return $items;
                     } else {
                         $this->log($e->getMessage());
@@ -94,7 +102,8 @@ class VPKit {
             }
 
             // Items already are in a valid cache
-            return json_decode($cache->get($this->cacheID), true);
+            $this->rawItems = json_decode($cache->get($this->cacheID), true);
+            return $this->rawItems;
         }
 
         return ($this->fetch_func)();
@@ -104,9 +113,10 @@ class VPKit {
     private function getItemsInCurrentLang()
     {
         $currentLang = kirby()->language()->code();
+        $rawItems = $this->fetchRawItems();
 
-        if(isset($this->rawItems[$currentLang])) {
-            return $this->rawItems[$currentLang];
+        if(isset($rawItems[$currentLang])) {
+            return $rawItems[$currentLang];
         } else {
             return [];
         }
@@ -129,8 +139,10 @@ class VPKit {
     // Returns the translations for given id in the fetched items
     private function getTranslations($id)
     {
+        $rawItems = $this->fetchRawItems();
         $translations = [];
-        foreach($this->rawItems as $lang => $localizedItems) {
+
+        foreach($rawItems as $lang => $localizedItems) {
             foreach($localizedItems as $item) {
                 if( $item['id'] == $id) {
                     $config['code'] = $lang;
