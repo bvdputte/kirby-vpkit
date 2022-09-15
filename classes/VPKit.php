@@ -40,9 +40,9 @@ class VPKit {
     public function getPages()
     {
         $vrPages = [];
-        foreach ($this->getItemsInCurrentLang() as $vrPageProps) {
             array_push($vrPages, $this->getVirtualPageProps($vrPageProps));
         }
+            foreach ($this->getItemsInDefaultLang() as $vrPageProps) {
 
         return Pages::factory($vrPages, $this->parentPage);
     }
@@ -109,14 +109,14 @@ class VPKit {
         return ($this->fetch_func)();
     }
 
-    // Return an array of items with specified keys per item (per language)
-    private function getItemsInCurrentLang()
+    // Return an array of items with specified keys per item in the default language
+    private function getItemsInDefaultLang()
     {
-        $currentLang = kirby()->language()->code();
+        $defaultLang = kirby()->defaultLanguage()->code();
         $rawItems = $this->fetchRawItems();
 
-        if(isset($rawItems[$currentLang])) {
-            return $rawItems[$currentLang];
+        if(isset($rawItems[$defaultLang])) {
+            return $rawItems[$defaultLang];
         } else {
             return [];
         }
@@ -131,8 +131,7 @@ class VPKit {
             'template' => $this->template,
             'model'    => $this->template,
             'parent'   => $this->parentPage,
-            'translations' => $this->getTranslations($vrPageProps['id']),
-            'content' => $vrPageProps['content']
+            'translations' => $this->getTranslations($vrPageProps['id'])
         ];
     }
 
