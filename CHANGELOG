@@ -3,3 +3,7 @@
 ## 1.0.0
 
 Initial version
+
+## 1.1.0
+
+Add in-memory cache to speed up successive calls to methods that generate the virtual pages.

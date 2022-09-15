@@ -39,12 +39,25 @@ class VPKit {
     // Return an Pages-object of items with specified keys per item (per language)
     public function getPages()
     {
-        $vrPages = [];
-            array_push($vrPages, $this->getVirtualPageProps($vrPageProps));
-        }
-            foreach ($this->getItemsInDefaultLang() as $vrPageProps) {
+        // Check if children are in `register` for give parent.
+        // The `register` functions as an in-memory cache to avoid a
+        // multitude of cache reads, JSON parses and page factory calls
+        // of the same contentn in a single request handling.
+        $register = option('bvdputte.kirby-vpkit.register');
+        $parentId = $this->parentPage->id();
 
-        return Pages::factory($vrPages, $this->parentPage);
+        if ($register->get($parentId)) {
+            return $register->get($parentId);
+        } else {
+            $vrPages = [];
+            foreach ($this->getItemsInDefaultLang() as $vrPageProps) {
+                array_push($vrPages, $this->getVirtualPageProps($vrPageProps));
+            }
+
+            $virtualChildren = Pages::factory($vrPages, $this->parentPage);
+            $register->set($parentId, $virtualChildren);
+            return $virtualChildren;
+        }
     }
 
     // Updates the cached articles from the API
