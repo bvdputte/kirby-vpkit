@@ -7,3 +7,9 @@ Initial version
 ## 1.1.0
 
 Add in-memory cache to speed up successive calls to methods that generate the virtual pages.
+
+## 1.1.1
+
+Fix bug when some virtual pages lack translations.
+More context: https://forum.getkirby.com/t/multilang-virtual-pages-particular-page-not-translated-howto/26510/12
+Currently not 100% fixed (it only solves the hard error in Kirby), as it's unable to check if a virtual page has a content translation via `$contentTranslation->exists()`. Now defaults back to showing default language in this scenario (duplicate content issues are a risk).

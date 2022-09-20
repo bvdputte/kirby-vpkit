@@ -152,17 +152,25 @@ class VPKit {
     private function getTranslations($id)
     {
         $rawItems = $this->fetchRawItems();
+        $defaultLang = kirby()->defaultLanguage()->code();
         $translations = [];
 
-        foreach($rawItems as $lang => $localizedItems) {
-            foreach($localizedItems as $item) {
-                if( $item['id'] == $id) {
-                    $config['code'] = $lang;
-                    $config['slug'] = $item['slug'];
-                    $config['content'] = $item['content'];
-                    $translations[$lang] = $config;
-                }
+        foreach($rawItems as $langCode => $localizedItems) {
+            $config['code'] = $langCode;
+
+            if ( isset($localizedItems[$id])) {
+                // Translation is available for given $id
+                $config['slug'] = $localizedItems[$id]['slug'];
+                $config['content'] = $localizedItems[$id]['content'];
+            } else {
+                // Translation is not available for given $id,
+                // 1. Fallback to slug in default lang
+                $config['slug'] = $rawItems[$defaultLang][$id]['slug'];
+                // 2. Fallback to empty content
+                // https://github.com/getkirby/kirby/issues/4674
+                $config['content'] = [];
             }
+            $translations[$langCode] = $config;
         }
 
         return $translations;
