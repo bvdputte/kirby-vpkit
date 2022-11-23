@@ -46,6 +46,12 @@ return [
                         ]
                     ];
 
+                    // UUID (since Kirby 3.8)
+                    // Set UUID only in default language
+                    if ($lang->code() == kirby()->defaultLanguage()->code()) {
+                        $vrPageProps['content']['uuid'] = $item['uuid'];
+                    }
+
                     $vrPagesPerLang[$slug] = $vrPageProps;
                 }
 
