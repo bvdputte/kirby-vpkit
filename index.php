@@ -1,7 +1,7 @@
 <?php
 
-include __DIR__ . DS . 'classes' . DS . 'VPKit.php';
-include __DIR__ . DS . 'classes' . DS . 'Register.php';
+include __DIR__ . '/classes/VPKit.php';
+include __DIR__ . '/classes/Register.php';
 
 @include_once __DIR__ . '/vendor/autoload.php';
 
