@@ -8,6 +8,8 @@ namespace bvdputte\kirbyVPKit;
  **/
 
 class Register {
+    private $items = [];
+ 
     public function __construct()
     {
         $this->items = [];
